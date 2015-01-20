@@ -10,17 +10,33 @@
 <body>
 	<div id="content"></div>
 	<script type="text/jsx">
-	var data = [
-	{author: "Norman Reedus", text: "This is one comment"},
-	{author: "Alex Bezuska", text: "This is *another* comment"}
-	];
+
 	var CommentBox = React.createClass({
+		loadCommentsFromServer: function() {
+			$.ajax({
+				url: this.props.url,
+				dataType: 'json',
+				success: function(data) {
+					this.setState({data: data});
+				}.bind(this),
+				error: function(xhr, status, err) {
+					console.error(this.props.url, status, err.toString());
+				}.bind(this)
+			});
+		},
+		getInitialState: function() {
+			return {data: []};
+		},
+		componentDidMount: function(){
+			this.loadCommentsFromServer();
+			setInterval(this.loadCommentsFromServer, this.props.pollInterval)
+		},
 		render: function() {
 			return (
 				<div className="commentBox">
-					<h1>Comments</h1>
-					<CommentList data={this.props.data} />
-					<CommentForm />
+				<h1>Comments</h1>
+				<CommentList data={this.state.data} />
+				<CommentForm />
 				</div>
 				);
 		}
@@ -31,13 +47,13 @@
 			var commentNodes = this.props.data.map(function (comment) {
 				return (
 					<Comment author={comment.author}>
-						{comment.text}
+					{comment.text}
 					</Comment>
 					);
 			});
 			return (
 				<div className="commentList">
-					{commentNodes}
+				{commentNodes}
 				</div>
 				);
 		}
@@ -58,17 +74,17 @@
 			var rawMarkup = converter.makeHtml(this.props.children.toString());
 			return (
 				<div className="comment">
-					<h2 className="commentAuthor">
-						{this.props.author}
-					</h2>
-					<span dangerouslySetInnerHTML={{__html: rawMarkup}} />
+				<h2 className="commentAuthor">
+				{this.props.author}
+				</h2>
+				<span dangerouslySetInnerHTML={{__html: rawMarkup}} />
 				</div>
 				);
 		}
 	});
 
 	React.render(
-		<CommentBox data={data} />,
+		<CommentBox url="comments.json" pollInterval={2000}/>,
 		document.getElementById('content')
 		);
 	</script>
